@@ -1,0 +1,40 @@
+"0","#import df created from Sean's compiler of raw text sequence - source code in appendix of this document"
+"0","#formerly articles_1pct_dec26 "
+"0","lynch <- read_csv(""../test_class/data/articles_march8.csv"")"
+"2","New names:"
+"2","[1mRows: [22m[34m46205[39m [1mColumns: [22m[34m17[39m"
+"2","[36m──[39m [1mColumn specification[22m [36m────────────────────────────────────────[39m
+[1mDelimiter:[22m "",""
+[31mchr[39m (9): filename, sentence, sn, newspaper_name, page, editi...
+[32mdbl[39m (8): ...1, ...4, file_id, article_id, year, month, day, ..."
+"2","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message."
+"0","#index of 1 pct sample which has been checked by a coder and represents all valid entries"
+"0","#formerly jackindex_dec26"
+"0","jackindex <- read_csv(""../test_class/data/jackindex_march8.csv"")"
+"2","[1mRows: [22m[34m1387[39m [1mColumns: [22m[34m15[39m"
+"2","[36m──[39m [1mColumn specification[22m [36m────────────────────────────────────────[39m
+[1mDelimiter:[22m "",""
+[31mchr[39m (8): sn, newspaper_name, page, edition, URL, newspaper_s...
+[32mdbl[39m (7): ...1, file_id, article_id, year, month, day, mod_id"
+"2","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message."
+"0","#index of all 59,967 articles captured"
+"0",""
+"0","index <- read_csv(""../test_class/data/index_feb6.csv"") %>% "
+"0","  as.data.frame()"
+"2","New names:"
+"2","[1mRows: [22m[34m59967[39m [1mColumns: [22m[34m61[39m"
+"2","[36m──[39m [1mColumn specification[22m [36m────────────────────────────────────────[39m
+[1mDelimiter:[22m "",""
+[31mchr[39m (11): newspaper_name, newspaper_state, sn, filepath, ""ly...
+[32mdbl[39m (42): ...1, Unnamed: 0.1, year, month, day, edition, pag...
+[33mlgl[39m  (8): ""mob\W+((\w+\W+){1,2})?(hung|hang(ed|ings?|s)|lync..."
+"2","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message."
+"0","index <- janitor::clean_names(index)"
+"0",""
+"0",""
