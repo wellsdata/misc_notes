@@ -9,6 +9,7 @@ output: html_document
 library(tidyverse)
 #install.packages("tidytext")
 library(tidytext)
+#install.packages("rio")
 library(rio)
 #install.packages("quanteda") 
 library(quanteda)
