@@ -1,7 +1,13 @@
-#Lab_05  {lab_05}
+---
+knitr:
+  root.dir: "../Code/data_journalism_class/04_labs/lab_05"
+---
+#Lab_05_KEY  {lab_05}
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+here::here("/Code/data_journalism_class/04_labs/lab_05")
+
 ```
 
 ## About this lab
@@ -60,8 +66,14 @@ Include the code to show the number of records. Clean the names using Janitor
 #KEY
 library(tidyverse)
 library(janitor)
-us_death <- read_csv('../lab_05/CDC_Life_Census_Tract_2010_2015.csv')
+here::here("/Code/data_journalism_class/04_labs/lab_05")
+us_death <- read_csv(here::here("~/Code/data_journalism_class/04_labs/lab_05/CDC_Life_Census_Tract_2010_2015.csv"))
+                     
 us_death <- janitor::clean_names(us_death)
+```
+
+
+```{r}
 nrow(us_death)
 #73121
 names(us_death)
@@ -78,7 +90,12 @@ nrow(balt_death)
 ```
 
 **Q2.** 
-For this question, load a modified dataset that has the same information but with the Baltimore neighborhoods added. It's called balt_death_census.csv and is in the data folder. Call this table balt_death2. 
+For this question, load a modified dataset called balt_death_census.csv.
+
+Call it balt_death2
+
+This has the same information but with the Baltimore neighborhoods. 
+
 Produce a summary of basic statistics on the average life expectancy rate.
 
 Show the neighborhoods with a life expectancy rate below the 1st quartile, arranged in ascending order. 
@@ -87,7 +104,7 @@ Show the neighborhoods with a life expectancy rate below the 1st quartile, arran
 **A2.** 
 ```{r}
 #KEY
-balt_death2 <- read_csv('../lab_05/balt_death_census.csv')
+balt_death2 <- read_csv(here::here("~/Code/data_journalism_class/04_labs/lab_05/balt_death_census.csv"))
 
 summary(balt_death2$life_expectancy, na.m=TRUE)
 #Show in New Window
@@ -131,8 +148,13 @@ md_death %>%
 
 **Q4.**
 
-Use balt_death. Use the case_when command in mutate to categorize all Baltimore City Census tracts as being above or below the city's average life expectancy rate. 
+Use balt_death. Use mutate and the case_when command.
+
+Categorize all Baltimore City Census tracts as being above or below the city's average life expectancy rate. 
+
 Then produce a short table that summarizes the number of Census tracts above or below the average life expectancy rate. Write two sentences summarizing your findings.
+
+Pro Tip: See this chapter section for a refresher on case_when: https://wellsdata.github.io/data_journalism_class/_book/r-mutating.html#a-more-powerful-use
 
 
 ```{r}

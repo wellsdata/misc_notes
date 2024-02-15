@@ -1,9 +1,17 @@
+---
+knitr:
+  root.dir: "../Code/data_journalism_class/04_labs/lab_04"
+---
+
+
 #Lab_04 {lab_04}
 
 rob wells, 8/14/2021
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+here::here("/Code/data_journalism_class/04_labs/lab_04")
+
 ```
 
 ### Load libraries and establish settings
@@ -39,8 +47,9 @@ Background on this data from [Social Explorer](https://www.socialexplorer.com/da
 # The data is called lab_04.csv, and is in the same folder as lab_04.qmd (this data notebook)
 
 #KEY
-md_race <- read_csv("~/Code/data_journalism_interactive_textbook/04_labs/lab_04/lab_04.csv")
-
+library(here)
+here::here("/Code/data_journalism_interactive_textbook/04_labs/lab_04")
+md_race <- read_csv(here::here("~/Code/data_journalism_class/04_labs/lab_04/lab_04.csv"))
 ```
 
 ## Answer questions
@@ -59,6 +68,7 @@ top5_hispanic_pct <- md_race %>%
   mutate(pct_hispanic = (x2020_hispanic/x2020_total)) %>% 
   slice_max(pct_hispanic, n =5)
 
+top5_hispanic_pct 
 ```
 
 Q2: Compare the top 10 cities with the largest Black population as a percentage of the overall population in 2010 and 2020. Filter for places with more than 20,000 population in 2010. Call your results pct_black. Compare results for 2020 vs 2010. What is different? What surprised you? 
@@ -74,8 +84,10 @@ pct_black <- md_race %>%
   filter(x2010_total > 20000) %>% 
   mutate(pct_black_2020 = (x2020_black/x2020_total)) %>% 
   mutate(pct_black_2010 = (x2010_black/x2010_total)) %>% 
+  select(place, pct_black_2020, pct_black_2010, x2020_black, x2020_total, x2010_black, x2010_total) %>% 
   slice_max(pct_black_2020, n = 10)
 
+pct_black
 ```
 
 Q3: Find the 15 communities that had the great gains in Hispanic population from 2010 to 2020 as measured by percentage change. Also calculate percentage change for the community's overall growth during the same period. Filter your results for communities with more than 10,000 people as of 2020. Your results will be hisp_growth. Look at your results, craft a one-paragraph story pitch for your editor. 
@@ -90,6 +102,9 @@ hisp_growth <- md_race %>%
   filter(x2020_total > 10000) %>% 
   mutate(hispanic_growth = ((x2020_hispanic-x2010_hispanic)/x2010_hispanic)*100) %>% 
   mutate(total_growth = ((x2020_total-x2010_total)/x2010_total)*100) %>% 
+  select(place,hispanic_growth, total_growth, x2020_hispanic, x2020_total, x2010_hispanic, x2010_total) %>% 
   slice_max(hispanic_growth, n = 15)
+
+hisp_growth
 
 ```
