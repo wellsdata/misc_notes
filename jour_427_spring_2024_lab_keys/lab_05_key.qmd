@@ -96,7 +96,7 @@ Call it balt_death2
 
 This has the same information but with the Baltimore neighborhoods. 
 
-Produce a summary of basic statistics on the average life expectancy rate.
+Produce summary statistics showing the data distribution by quartile, median, mean, miniumum and maximum values on the life expectancy rate.
 
 Show the neighborhoods with a life expectancy rate below the 1st quartile, arranged in ascending order. 
 
@@ -128,6 +128,9 @@ Produce a table with the 20 communities with the highest life expectancy.
 Then use us_death, and determine the average life expectancy nationwide.
 
 Then write 150-200 words on a separate Google Doc comparing your findings of Baltimore, the state and nation. Remember to include the google Doc link in this document. 
+Maryland average life expectancy is 78.7 years
+Baltimore average life expectancy is  73.04 years
+USA average life expectancy is 78.3 years
 
 **A3.**
 
@@ -152,7 +155,7 @@ Use balt_death. Use mutate and the case_when command.
 
 Categorize all Baltimore City Census tracts as being above or below the city's average life expectancy rate. 
 
-Then produce a short table that summarizes the number of Census tracts above or below the average life expectancy rate. Write two sentences summarizing your findings.
+Then produce a table that summarizes the number of Census tracts above or below the average life expectancy rate. Write two sentences summarizing your findings.
 
 Pro Tip: See this chapter section for a refresher on case_when: https://wellsdata.github.io/data_journalism_class/_book/r-mutating.html#a-more-powerful-use
 
@@ -162,14 +165,16 @@ Pro Tip: See this chapter section for a refresher on case_when: https://wellsdat
 balt_death <- balt_death %>%
   mutate(
     above_below_avg = case_when(
-        life_expectancy >= '72.7' ~ "Above",
-        life_expectancy <= '72.7' ~ "Below"
+        life_expectancy >= 73.04 ~ "Above",
+        life_expectancy <= 73.04 ~ "Below"
       )
   )
 
 balt_death %>% 
   count(above_below_avg)
 
+
+#There are 87 neighborhoods above the average life expectancy rate of 73 years and 93 neighborhoods below that rate.
 
 ```
 

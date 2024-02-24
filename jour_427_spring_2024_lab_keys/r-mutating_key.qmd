@@ -223,6 +223,30 @@ pct_lowest <-  mdcities %>%
 
 
 **Question #2: **
+A) Determine the summary statistics of mdcities median income for 2020. Determine the value for the first quartile.
+
+B) Use mutate and case_when to create a column called "category." Within this, label cities in the first quartile as "lowest" and the remaining "above". Create a new table called "lowest" with your results
+
+```{r}
+summary(mdcities$median_inc_2020)
+#Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+#   2499   63327   85452   92891  114540  250001 
+#   NA's   82 
+#First quartile is 63327
+
+lowest <- mdcities %>% 
+  mutate(
+    category = case_when(
+    median_inc_2020 <= "63327" ~ "lowest",
+    median_inc_2020 >= "63327" ~ "above"
+    ) 
+  )
+
+```
+
+
+
+**Question #3: **
 Answer this question in English: Write in Elms
 
 2) Building on the previous lesson on filtering, describe how you would determine the median value of the percentage change and produce a table with the 10 neighborhoods with the highest change and the 10 with the lowest change.
