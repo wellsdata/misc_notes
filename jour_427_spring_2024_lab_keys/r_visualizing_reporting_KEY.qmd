@@ -36,7 +36,8 @@ This tutorial uses a subset of this data [^r_visualizing_reporting-1]
 [^r_visualizing_reporting-1]: The Calls for Service were filtered as follows: CONTAINS homeless, 915, 919, 920: Downloaded 157,237 records 3/31/16 to 11/30/2019. This is 5.1% of all calls in the broader database. File renamed to: SF_311.xlsx
 
 ```{r, message=FALSE}
-SF <- read_csv("assets/data/SF_311.csv")
+#SF <- read_csv("assets/data/SF_311.csv")
+SF <- read_csv("SF_311.csv")
 ```
 
 Clean column names, Process dates
@@ -289,6 +290,23 @@ arrest <- SF %>%
   filter(disposition=="ARR") %>% 
   count(year)
 
+
+#jacob
+arrests <- SF %>% 
+  
+count(year,disposition) %>% 
+  group_by(year) %>% 
+  filter(disposition == "ARR") %>% 
+  arrange(desc(n))
+
+
+#becca
+arr <- SF %>% 
+  count(year, disposition) %>% 
+  group_by(year) %>% 
+  filter(disposition == "ARR") %>% 
+  arrange(desc(n))
+
 ```
 
 
@@ -301,6 +319,40 @@ ggplot(arrest, aes(year, n, fill = n)) +
        caption = "Graphic by Wells",
        y="Number of Calls",
        x="Day")
+
+#Lizzy
+arrests %>%
+     ggplot(aes(x=year, y=n, weight=n, fill=n)) +
+     geom_col()+
+     geom_text(aes(label=n), hjust = -.1, size = 2.5) +
+     labs(
+         title="San Francisco Arrests",
+         x = "year",
+         y = "total arrests",
+         caption = "source: SF PD Arrest Data, 2016-2019")
+
+
+#Olivia
+#For coloring the bars, I'd use fill= instead of weight=
+arrests %>%
+  ggplot(aes(x=year, y=n, fill = n, weight=n)) +
+  theme_minimal() +
+  geom_col(position = "dodge")+
+    labs(
+    fill = "Frequency",
+    title="San Francisco Arrests from 2016 - 2019",
+    x = "Year",
+    y = "Number of Arrests",
+    caption = "Source: SF PD Service Call Data, 2016-2019")
+
+#Emily
+arrests %>%
+  ggplot() +
+  geom_bar(aes(x=year, n=disposition)) +
+  geom_bar(aes(x=2016), color = "blue") +
+  geom_bar(aes(x=2017), color = "brown") +
+  geom_bar(aes(x=2018), color = "green") +
+  geom_bar(aes(x=2019), color = "yellow") 
 
 
 ```
@@ -320,6 +372,24 @@ all_dispo <- SF %>%
   count(disposition) %>% 
   slice_max(n, n=12)
 
+#Cassie
+all_dispo <- SF %>% 
+  select(year, disposition) %>% 
+  count(disposition)
+
+top12_all_dispo <- all_dispo %>%
+  slice_max(n, n=12)
+
+
+
+
+#Lizzy
+all_dispo <- table(SF$disposition) 
+  as.data.frame(all_dispo) %>% 
+    slice_max(all_dispo, n=12)
+  
+#Error in `fortify()`: ! `data` must be a <data.frame>, or an object coercible by `fortify()`, not a <table> object.  
+
 ```
 
 Create a bar chart of all_dispo and include a headline and caption
@@ -333,6 +403,62 @@ ggplot(all_dispo, aes(disposition, n, fill = n)) +
        caption = "Graphic by Wells",
        y="Number of Calls",
        x="Day")
+
+
+
+
+top_12_dispo <- as.data.frame(all_dispo) %>% 
+  slice_max(all_dispo, n=12)
+
+top_12_dispo%>% 
+  ggplot(aes(x=Var1, y=Freq, weight=Freq, fill=Freq)) +
+  geom_col()+
+  geom_text(aes(label=Freq), hjust = -.1, size = 2.5) +
+    labs(
+    title="San Francisco Dispositions, 2016-2019",
+    x = "dispositions",
+    y = "frequency",
+    caption = "source: SF PD Arrest Data, 2016-2019")
+
+#Emily
+
+#Question for Prof. Wells - Why does by n color chart have overlapping numbers?
+all_dispo %>%
+  ggplot(aes(x=disposition, y=n, weight=n, fill=n)) +
+ # theme_economist() +
+  geom_col()+
+  geom_text(aes(label=n), hjust = -.1, size = 2.5) +
+    labs(
+    title="Most Common 311 Call Resolutions",
+    x = "Resolution",
+    y = "Count",
+    caption = "source: SF PD Service Call Data, 2016-2019")
+
+
+#
+# The chart is wrong because you didn't use slice_max to build the table. You used head and it came up with the wrong sorting. See the correct code.
+all_dispo <- SF %>% 
+select(disposition) %>% 
+filter(disposition != "Not Recorded") %>% 
+count(disposition) %>% 
+  group_by(disposition) %>% 
+  #NO!!!!
+  head(12) %>%
+  arrange(desc(n)) 
+
+top_12_dispo <- all_dispo %>% 
+ ggplot(aes(x=disposition, y=n, fill=n)) +
+  geom_col(position = "dodge") +
+    theme_minimal()+
+  labs(
+    title = "Most Popular 311 Call Resterations",
+    x = "Resolutions",
+    y = "Count",
+    caption = "source: SF Call Data, from 2016 to 2019"
+  )
+top_12_dispo 
+
+
 ```
 
 **NERD ZONE**
@@ -347,5 +473,39 @@ all_dispo %>%
        caption = "Graphic by Wells",
        y="Number of Calls",
        x="Day")
+
+
+#Lizzy
+top_12_dispo <- as.data.frame(all_dispo) %>% 
+  slice_max(all_dispo, n=12)
+
+top_12_dispo%>% 
+  ggplot() +
+  geom_bar(aes(x=reorder(Var1, Freq), weight=Freq))+
+  labs(
+    title="San Francisco Dispositions, 2016-2019",
+    x = "dispositions",
+    y = "frequency",
+    caption = "source: SF PD Arrest Data, 2016-2019")
+
+
+#Olivia create same barchart but with descending bars
+all_dispo %>% 
+  ggplot(aes(x=reorder(disposition, n), y=n, fill=n, weight=n)) +
+  coord_flip()+
+  theme_minimal() +
+  geom_col(position = "dodge")+
+    labs(
+    fill = "Frequency",
+    title="San Francisco Dispositions from 2016 to 2019",
+    x = "Type of Disposition",
+    y = "Number of Occurences",
+    caption = "Source: SF PD Arrest Data, 2016-2019")
+
+
+
+
+
+
 ```
 
