@@ -77,6 +77,18 @@ us_death <- janitor::clean_names(us_death)
 nrow(us_death)
 #73121
 names(us_death)
+```
+
+
+```{r}
+#I would think very carefully about what this code will do: 
+us_death_clean1 <- na.omit(us_death)
+nrow(us_death_clean1)
+
+```
+
+
+```{r}
 #
 md_death <- us_death %>% 
   filter(state == "Maryland")
@@ -88,6 +100,18 @@ nrow(balt_death)
 #200
 
 ```
+
+
+```{r}
+#similarly, the filtering of the US data and this code that removes NAs excessively filters your maryland data: 
+
+md_death2 <- us_death %>%
+filter(state == "Maryland", na.rm=TRUE)
+nrow(md_death2)
+
+
+```
+
 
 **Q2.** 
 For this question, load a modified dataset called balt_death_census.csv.
@@ -179,3 +203,45 @@ balt_death %>%
 ```
 
 
+
+#R tricks
+
+```{r}
+#Lizzy: plot I thought the code to make basic data visualization charts in R was interesting, as 
+
+plot(balt_death)
+
+
+plot(balt_death$life_expectancy)
+
+
+
+
+
+```
+
+
+```{r}
+# Emily
+# Two new things I learned were how to add a total column/row to a data frame (janitor::adorn_totals(mydf, where = "col") or janitor::adorn_totals(mydf)) and to write an if statement (if(condition){ do something })
+
+x <- janitor::adorn_totals(balt_death)
+
+x
+
+````
+
+
+```{r}
+# Cassie
+# The second thing I learned from the How Do I article was how to create an interactive scatter plot with a linear regression using the dataset md_race. The code:
+# library(taucharts)
+# tauchart(md_race) %>% tau_point("place", "x2020_black") %>% tau_tooltip() %>% tau_trendline()
+
+install.packages("devtools")
+l
+devtools::install_github("hrbrmstr/taucharts")
+library(taucharts)
+tauchart(balt_death) %>% tau_point("life_expectancy", "life_expectancy_standard_error") %>% tau_tooltip() %>% tau_trendline()
+
+```
