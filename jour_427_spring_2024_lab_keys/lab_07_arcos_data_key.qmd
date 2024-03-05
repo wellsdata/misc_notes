@@ -150,8 +150,56 @@ arcos_county <- arcos %>%
 arcos_county
 ```
 
-**Q2** Which U.S. state had the highest number of opioid pills per person for pills shipped in 2014? How many total pills, and what was the per person rate? How did that compare to Washington, D.C.
-**A2** Manufacturers shipped more than 120 million opioid pills to West Virginia in 2014. That represented 65 opioid pills for every person who lived in the state, a higher rate than anywhere else in the U.S. Washington, D.C. was the lowest with 13.5 pills per person.
+**Q2_New** 
+Which U.S. state saw the highest percentage increase in opiod pills from 2006 to 2014? 
+
+--Produce two tables, one for 2006 and one for 2014. In the 2006 table, rename the total to total_2006. In the 2014 table, rename the total to total_2014. 
+--Join the tables into a new table, arcos_combo
+--Your table must have the full name of the states. Join with the state crosswalk table
+--Calculate the percentage change between 2006 and 2014
+--Create one table with the top 5 states by percentage increase 
+--Create a second table with the 5 states with the lowest percentage increase. 
+--Write a sentence that could be dropped in as the lede of a news story from the finding in question two. 
+**A2_new**
+```{r}
+
+arcos_2006 <- arcos %>% 
+  group_by(buyer_state, year) %>% 
+  summarize(total = sum(total_pills)) %>% 
+  filter(year== "2006") %>% 
+  rename(total_2006 = total)
+
+
+arcos_2014 <- arcos %>% 
+  group_by(buyer_state, year) %>% 
+  summarize(total = sum(total_pills)) %>% 
+  filter(year== "2014") %>% 
+  rename(total_2014 = total)
+
+arcos_combo <- arcos_2006 %>% 
+  inner_join(arcos_2014, by="buyer_state") %>% 
+  mutate(pct_change = (total_2014-total_2006)/total_2006) %>% 
+  inner_join(state_crosswalk, by=c("buyer_state"="state_abb")) %>% 
+  ungroup()
+
+
+arcos_max <- arcos_combo %>%
+  select(state_name, pct_change) %>% 
+  slice_max(pct_change, n = 5)
+
+
+arcos_min <- arcos_combo %>%
+  select(state_name, pct_change) %>% 
+  slice_min(pct_change, n = 5)
+
+
+```
+
+
+
+
+**Q3_For Tuesday. Not for March 7 Lab** Which U.S. state had the highest number of opioid pills per person for pills shipped in 2014? How many total pills, and what was the per person rate? How did that compare to Washington, D.C.
+**A3** Manufacturers shipped more than 120 million opioid pills to West Virginia in 2014. That represented 65 opioid pills for every person who lived in the state, a higher rate than anywhere else in the U.S. Washington, D.C. was the lowest with 13.5 pills per person.
 
 
 ```{r}
