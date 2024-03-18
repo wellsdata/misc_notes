@@ -345,7 +345,11 @@ Name the new table "md_smith_data"
 ```{r}
 
 maryland_tracts <- rio::import("maryland_tracts.xls")
+maryland_tracts <- rio::import("/Users/robwells/Code/data_journalism_class/04_labs/lab_07/r-join-bind/maryland_tracts.xls")
+
 md_counties_geoids <- rio::import("md_counties_geoids.txt")
+
+md_counties_geoids <- rio::import("/Users/robwells/Code/data_journalism_class/04_labs/lab_07/r-join-bind/md_counties_geoids.txt")
 
 md_smith_data <- maryland_tracts %>% 
   inner_join(md_counties_geoids, by=c("cty"="GEOID"))
@@ -364,7 +368,8 @@ census <- md_smith_data %>%
   summarize(average = mean(census_response_rate2020, na.rm = TRUE)) %>% 
   arrange(desc(average))
 
-
+#Howard county has the highest census response rate in 2020 at 82%
+#Worcester County has the lowest census response rate in 2020 at 51%
 ```
 
 
