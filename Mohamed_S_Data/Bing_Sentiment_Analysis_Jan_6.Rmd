@@ -1,0 +1,786 @@
+---
+title: "Bing Sentiment_Analysis"
+author: "Rob Wells"
+date: "2023-1-6"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(textdata)
+library(tidytext)
+library(quanteda)
+library(rio)
+
+
+```
+
+# Tokenizing data
+
+```{r}
+#import df created from sequence below
+lynch <- read_csv("articles_1pct_dec26.csv")
+
+#index of 1 pct sample which has been checked by a coder and represents all valid entries
+jackindex <- read_csv("jackindex_dec26.csv")
+
+all_text <- str_replace_all(lynch$sentence, "- ", "")
+text_df <- tibble(all_text,)
+
+# unnest includes lower, punct removal
+
+text_tokenized <- text_df %>%
+  unnest_tokens(word,all_text)
+
+text_tokenized
+
+#Remove stopwords
+
+data(stop_words)
+
+text_tokenized<- text_tokenized %>%
+  anti_join(stop_words, by = c("word" = "word")) %>%
+  filter(word != "temp_file") %>%
+  #NOT SURE IF THIS LINE SHOULD REMAIN
+  filter(word != "stories_corpus") %>%
+  filter(!grepl('[0-9]', word))
+
+# fix the script so it doesn't pick up these file names, numbers  
+# forcibly removing for now
+
+
+# Word Count
+
+text_word_ct <- text_tokenized %>%
+  count(word, sort=TRUE)
+```
+
+# Bing Sentiment
+
+Bing Lexicon on Whole Corpus
+The Bing sentiment analysis categorizes  6,786 as positive or negative
+
+```{r}
+# cite this lexicon
+#install.packages("textdata")
+bing_sentiments <- get_sentiments("bing")
+
+bing_sentiments %>% count(sentiment) %>% 
+  mutate(pct_total =round(n/sum(n), digits=2))
+
+# negative	4781			
+# positive	2005		
+```
+
+### Review bing Overall Sentiment
+
+
+```{r}
+
+sentiments_all <- text_tokenized %>%
+  inner_join(bing_sentiments) 
+
+x <- sentiments_all %>% 
+  group_by(word) %>% 
+    count(sentiment)
+
+#Example	
+# word sentiment n
+# murder negative 78
+# killed negative 71
+# death negative 69
+# crime negative 56
+# dead negative 44
+# assault negative 38
+
+
+```
+
+# Sentiment by decade
+```{r}
+#before 1870
+pre1870 <- lynch %>% 
+  filter(year < 1870)
+
+#1870-1879
+the1870s <-  lynch %>% 
+  filter(year >= 1870 & year <=1879)
+
+#1880-1889
+the1880s <-  lynch %>% 
+  filter(year >= 1880 & year <=1889)
+
+#1890-1899
+the1890s <-  lynch %>% 
+  filter(year >= 1890 & year <=1899)
+
+#1900-1909
+the1900s <-  lynch %>% 
+  filter(year >= 1900 & year <=1909)
+
+#1910-1919
+the1910s <-  lynch %>% 
+  filter(year >= 1910 & year <=1919)
+
+#1920-1929
+the1920s <-  lynch %>% 
+  filter(year >= 1920 & year <=1929)
+
+#1930-1960
+post1930s <-  lynch %>% 
+  filter(year >= 1930)
+
+```
+
+#### Compile by decade
+```{r}
+lynch_decade <- lynch %>% 
+  mutate(decade = case_when(
+         year < 1870 ~ "pre1870",
+        year >= 1870 & year <=1879 ~ "1870s",
+         year >= 1880 & year <=1889 ~ "1880s",
+         year >= 1890 & year <=1899 ~ "1890s",
+        year >= 1900 & year <=1909 ~ "1900s",
+        year >= 1910 & year <=1919 ~ "1910s",
+        year >= 1920 & year <=1929 ~ "1920s",
+        year >= 1930 ~ "post1930s"
+         ))
+
+```
+
+### Count Overall Sentiment with bing
+
+```{r}
+bing_sent_all <- text_tokenized %>%
+  inner_join(bing_sentiments) %>%
+  count(sentiment, sort = TRUE) %>% 
+  mutate(pct_total =round(n/sum(n), digits=2))
+
+bing_sent_all
+
+
+```
+The Bing sentiment analysis shows 70% of the words in the sample were negative and 30% were positive, which matches the overall sentiment for the Bing lexicon.
+
+
+## Tokenize filtered lynching
+```{r}
+#replace variable
+
+# all_text2 <- lynch_decade %>% 
+#   filter(region=="Misc")
+
+all_text2 <- lynch_decade %>% 
+  filter(decade=="post1930s")
+
+all_text2 <- str_replace_all(all_text2$sentence, "- ", "")
+text_df <- tibble(all_text2,)
+
+text_tokenized <- text_df %>%
+  unnest_tokens(word,all_text2)
+
+data(stop_words)
+
+text_tokenized <- text_tokenized %>%
+  anti_join(stop_words, by = c("word" = "word")) %>%
+  filter(word != "temp_file") %>%
+  filter(word != "stories_corpus") %>%
+  filter(!grepl('[0-9]', word))
+
+#bing : replace variable
+bing_sent_post1930s <- text_tokenized %>%
+  inner_join(bing_sentiments) %>%
+  count(sentiment, sort = TRUE) %>%
+  mutate(pct_total =round(n/sum(n), digits=2)) %>%
+  #replace variable
+  mutate(decade = "post1930s")
+
+
+
+```
+bing: Compile decades into single df
+```{r}
+bing_sent_decade <- rbind(bing_sent_pre1870, bing_sent_1870s, bing_sent_1880s, bing_sent_1890s, bing_sent_1900s, bing_sent_1910s, bing_sent_1920s, bing_sent_post1930s)
+
+bing_sent_decade2 <- bing_sent_decade %>% 
+  filter(sentiment=="positive" | sentiment =="negative") %>% 
+  select(!(n)) %>% 
+  pivot_wider(names_from = sentiment, values_from = pct_total)
+
+```
+
+### Figure 1a: Bing Sentiment by decade
+https://afit-r.github.io/sentiment_analysis
+
+```{r}
+ggplot(bing_sent_decade2,aes(x = decade)) +
+  geom_point(aes(y=negative), size=4, color="red") +
+  geom_point(aes(y=positive), size=4, color="green") +
+  scale_x_discrete(limits = c('pre1870s', '1870s', '1880s', '1890s', '1900s', '1910s', '1920s', 'post1930s')) +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title = "News Sentiment in Lynching Coverage by Decade",
+       subtitle = "Based in 846 extracted articles, 1837-1960",
+       caption = "Red = negative sentiment; Green = positive.\n      Bing sentiment Lexicon. Graphic by Rob Wells, 1-6-2023",
+       y="Sentiment, percentage",
+       x="Decade")
+
+ggsave("Figure1a_bing_sentiment_decade_jan6.png",device = "png",width=9,height=6, dpi=1000)
+```
+
+```{r}
+
+
+ggplot(bing_sent_decade, aes(decade, sentiment)) +                           # Create heatmap with ggplot2
+  geom_tile(aes(fill = pct_total)) +
+  scale_fill_gradient(low= "green", high = "red") +
+  scale_x_discrete(limits = c('pre1870', '1870s', '1880s', '1890s', '1900s', '1910s', '1920s', 'post1930s')) +
+   labs(title = "News Sentiment in Lynching Coverage by Decade",
+       subtitle = "Based in 846 extracted articles, 1837-1960",
+       caption = "Red = negative sentiment; Green = positive.\n      Bing sentiment Lexicon. Graphic by Rob Wells, 1-6-2023")
+
+
+```
+
+### Regional classification
+```{r}
+# lynch_decade %>% 
+#   count(newspaper_state)
+lynch_decade <- lynch_decade %>% 
+  mutate(region=newspaper_state) %>% 
+  mutate(region = case_when(region=="South Carolina" ~ "South",
+                            region=="Texas" ~ "South",
+                            region=="Louisiana" ~ "South",
+                            region=="Tennessee" ~ "South",
+                            region=="Mississippi" ~ "South",
+                            region=="Arkansas" ~ "South",
+                            region=="Alabama" ~ "South",
+                            region=="Georgia" ~ "South",
+                            region=="Virginia" ~ "South",
+                            region=="Florida" ~ "South",
+                            region=="North Carolina" ~ "South",
+                            region=="Maryland" ~ "Border",
+                            region=="Delaware" ~ "Border",
+                            region=="West Virginia" ~ "Border",
+                            region=="Kentucky" ~ "Border",
+                            region=="Missouri" ~ "Border",
+                            region=="Maine" ~ "North",
+                            region=="New York" ~ "North",
+                            region=="New Hampshire" ~ "North",
+                            region=="Vermont" ~ "North",
+                            region=="Massassachusetts" ~ "North",
+                            region=="Connecticut" ~ "North",
+                            region=="Rhode Island" ~ "North",
+                            region=="Pennsylvania" ~ "North",
+                            region=="New Jersey" ~ "North",
+                            region=="Ohio" ~ "North",
+                            region=="Indiana" ~ "North",
+                            region=="Kansas" ~ "North",
+                            region=="Michigan" ~ "North",
+                             region=="Wisconsin" ~ "North",
+                             region=="Minnesota" ~ "North",
+                             region=="Iowa" ~ "North",
+                             region=="California" ~ "North",
+                             region=="Nevada" ~ "North",
+                             region=="Oregon" ~ "North",
+                            region=="Illinois" ~ "North",
+                            region=="Nebraska" ~ "Misc",
+                            region=="Colorado" ~ "Misc",
+                            region=="North Dakota" ~ "Misc",
+                            region=="South Dakota" ~ "Misc",
+                            region=="Montana" ~ "Misc",
+                            region=="Washington" ~ "Misc",
+                            region=="Idaho" ~ "Misc",
+                            region=="Wyoming" ~ "Misc",
+                            region=="Utah" ~ "Misc",
+                            region=="Oklahoma" ~ "Misc",
+                            region=="New Mexico" ~ "Misc",
+                            region=="Arizona" ~ "Misc",
+                            region=="Alaska" ~ "Misc",
+                            region=="Hawaii" ~ "Misc",
+                            region=="District of Columbia" ~ "Misc",
+                            region=="Virgin Islands" ~ "Misc",
+                                                     TRUE~region)) 
+
+
+```
+
+
+## Tokenize regional filtered lynching
+```{r}
+#replace variable
+
+all_text2 <- lynch_decade %>% 
+   filter(region=="Misc")
+
+
+all_text2 <- str_replace_all(all_text2$sentence, "- ", "")
+text_df <- tibble(all_text2,)
+
+text_tokenized <- text_df %>%
+  unnest_tokens(word,all_text2)
+
+data(stop_words)
+
+text_tokenized <- text_tokenized %>%
+  anti_join(stop_words, by = c("word" = "word")) %>%
+  filter(word != "temp_file") %>%
+  filter(word != "stories_corpus") %>%
+  filter(!grepl('[0-9]', word))
+
+#bing : replace variable
+bing_misc <- text_tokenized %>%
+  inner_join(bing_sentiments) %>%
+  count(sentiment, sort = TRUE) %>%
+  mutate(pct_total =round(n/sum(n), digits=2)) %>%
+  #replace variable
+  mutate(region = "Misc")
+
+
+
+```
+
+```{r}
+bing_south <- bing_south %>% 
+  rename(south_n = n, south_pct = pct_total) %>% 
+  select(!(region))
+
+bing_north <- bing_north %>% 
+  rename(north_n = n, north_pct = pct_total) %>% 
+  select(!(region))
+
+bing_border <- bing_border %>% 
+  rename(border_n = n, border_pct = pct_total) %>% 
+  select(!(region))
+
+bing_misc <- bing_misc %>% 
+  rename(misc_n = n, misc_pct = pct_total) %>% 
+  select(!(region))
+
+bing_south <- bing_south %>% 
+  select(!(region))
+
+bing_north <- bing_north %>% 
+  select(!(region))
+
+bing_border <- bing_border %>% 
+  select(!(region))
+
+bing_misc <- bing_misc %>% 
+  select(!(region))
+
+
+
+bing_regions <- bing_south %>% 
+  inner_join(bing_north, by=c("sentiment")) %>% 
+  inner_join(bing_border, by=c("sentiment")) %>% 
+  inner_join(bing_misc, by=c("sentiment"))
+
+
+#reshape table for graphic  
+bing_regions2 <- bing_regions %>% 
+  select(sentiment, south_pct, north_pct, border_pct, misc_pct) %>% 
+  pivot_longer(
+    cols = ends_with("pct"),
+    names_to = "region",
+    values_to = "percent")
+
+#write.csv(sent_regions, "sent_regions_jan6.csv")
+```
+
+
+#### Figure 10: Bing regional sentiment chart
+```{r}
+ggplot(bing_regions2,aes(x = region, y = percent,fill = sentiment)) +
+  geom_col(position = "dodge") + 
+  theme(legend.position = "none") +
+  scale_y_continuous(labels = scales::percent, limits=c(0, 1)) +
+  geom_text(aes(label = scales::percent(percent)), size = 4) +
+   labs(title = "Border, Western States Have Higher Negative Sentiment in Lynching News",
+       subtitle = "Based in 846 extracted articles, 1837-1960",
+       caption = "Bing Sentiment analysis. Graphic by Rob Wells, 1-06-2023",
+       y="Sentiment",
+       x="Red = Negative, Blue = Positive")
+
+ggsave("Figure10_bing_sentiment_jan6.png",device = "png",width=9,height=6, dpi=800)
+
+
+```
+
+
+# CUT
+
+Data Table = Count Overall Sentiment with xxx
+Table 1 xxx sentiment jan_3_2023 
+```{r}
+sentiments_afinn <- text_tokenized %>%
+  inner_join(afinn_sentiments) %>%
+  count(value, sort = TRUE) %>% 
+  mutate(pct_total =round(n/sum(n), digits=2)*100)
+
+#install.packages("DT")
+library(DT)
+#table_1_afinn_sentiment_jan_3_2023.png
+sentiments_afinn %>% 
+  rename(Sentiment = value, Words_Total= n, Pct_total = pct_total) %>% 
+  arrange(Sentiment) %>% 
+  datatable(options = list(
+  autoWidth = TRUE,
+  columnDefs = list(
+    list(width = '40px', targets = c("Sentiment", "Words_Total", "Pct_total")))
+    )
+)
+
+
+```
+
+
+Overall, negative sentiment was 70% of the Southern newspaper coverage but just 69% of the Northern newspaper coverage.
+
+
+#### Table of Regional Sentiment with Afinn
+```{r}
+sent_regions %>% 
+  select(value, south_pct, north_pct, border_pct, misc_pct) %>% 
+  arrange(value) %>% 
+  datatable(options = list(
+  autoWidth = TRUE,
+  columnDefs = list(
+    list(width = '10px', targets = c("value", "south_pct", "north_pct", "border_pct", "misc_pct")))
+    )
+)
+
+```
+
+### Figure 8: Regional Sentiment with Afinn
+```{r}
+
+ggplot(sent_regions, aes(x=value))+
+  geom_point(aes(y=south_pct), position=position_jitter(h=0.01, w=.09), size=4, color="orange") +
+    # geom_point(aes(y=south_pct),  size=4, color="orange") +
+  geom_point(aes(y=north_pct), position=position_jitter(h=0.01, w=.09), size=4, color="blue") +
+    geom_point(aes(y=border_pct), position=position_jitter(h=0.01, w=.09), size=4, color="red") +
+    geom_point(aes(y=misc_pct), position=position_jitter(h=0.01, w=.09), size=4, color="green") +
+   scale_y_continuous(labels = scales::percent) +
+  labs(title = "Similar Overall Sentiment by Region in Lynching News Coverage",
+       subtitle = "Based in 846 extracted articles, 1837-1960",
+       caption = "Blue = North. Orange = South. Red= Border. Green = Misc.  Graphic by Rob Wells, 1-05-2023",
+       y="Pct of Words",
+       x="Afinn Sentiment analysis. Sentiment -5 = Negative and 5 = Positive")
+ggsave("Figure8_regional_sentiment_afinn_jan5.png",device = "png",width=9,height=6, dpi=1000)
+```
+
+
+### Tokenize by decade
+Each decade was manually looped through this script
+```{r}
+#replace variable
+all_text <- str_replace_all(post1930s$sentence, "- ", "")
+text_df <- tibble(all_text,)
+
+text_tokenized <- text_df %>%
+  unnest_tokens(word,all_text)
+
+data(stop_words)
+
+text_tokenized <- text_tokenized %>%
+  anti_join(stop_words, by = c("word" = "word")) %>%
+  filter(word != "temp_file") %>%
+  filter(word != "stories_corpus") %>%
+  filter(!grepl('[0-9]', word))
+
+#bing : replace variable
+# sentiments_post1930s <- text_tokenized %>%
+#   inner_join(bing_sentiments) %>% 
+#   count(sentiment, sort = TRUE) %>% 
+#   mutate(pct_total =round(n/sum(n), digits=2)) %>%
+#   #replace variable
+#   mutate(decade = "post1930s")
+
+#Afinn: replace variable
+sentiments_afinn_post1930s <- text_tokenized %>%
+  inner_join(afinn_sentiments) %>% 
+  count(value, sort = TRUE) %>% 
+  mutate(pct_total =round(n/sum(n), digits=2)) %>%
+  #replace variable
+  mutate(decade = "post1930s")
+
+```
+
+
+
+Afinn: Compile decades into single df
+```{r}
+sentiments_afinn_decade <- rbind(sentiments_afinn_pre1870, sentiments_afinn_the1870s, sentiments_afinn_the1880s, sentiments_afinn_the1890s, sentiments_afinn_the1900s, sentiments_afinn_the1910s, sentiments_afinn_the1920s, sentiments_afinn_post1930s)
+
+sentiments_afinn_decade2 <- sentiments_afinn_decade %>% 
+  select(!(n)) %>% 
+  pivot_wider(names_from = value, values_from = pct_total)
+
+x <- t(sentiments_afinn_decade2) %>% 
+  as.data.frame()
+
+library(tibble)
+x <- tibble::rownames_to_column(x, "Sentiment")
+
+names(x) <- x[1,]
+x <- x[-1,]
+
+sentiments_afinn_decade2 <- x %>% 
+  rename(sentiment = decade) %>% 
+  mutate(sentiment = as.numeric(sentiment)) %>% 
+  arrange(sentiment)
+
+
+```
+
+
+
+
+### Figure 6: Afinn Sentiment by decade
+```{r}
+afinn_sentiment_plot <- ggplot(sentiments_afinn_decade, aes(x = decade, y=value, size=pct_total)) +
+  geom_point(aes(color = factor(pct_total))) +
+  theme(legend.position = "none") +
+  scale_x_discrete(limits = c('pre1870s', '1870s', '1880s', '1890s', '1900s', '1910s', '1920s', 'post1930s')) +
+  labs(title = "Negative News Sentiment Dominates in Lynching Coverage",
+       subtitle = "Based in 846 extracted articles, 1837-1960",
+       caption = "Afinn sentiment Lexicon. Graphic by Rob Wells, 1-3-2022",
+       y="Sentiment score. -5 is Negative",
+       x="Decade")
+
+afinn_sentiment_plot + scale_fill_manual(values = c("red", "yellow","green"))
+
+# ggsave("Figure6_sentiment_decade_afinn_jan3.png",device = "png",width=9,height=6, dpi=1000)
+
+```
+
+#### Total Afinn sentiment by decade
+```{r}
+sentiments_afinn_decade3 <- sentiments_afinn_decade %>% 
+  mutate(neg_pos = case_when(
+    value < 0 ~"negative",
+    value > 0 ~"positive"
+  )) %>% 
+  group_by(decade, neg_pos) %>% 
+  summarize(sum(pct_total)) %>% 
+  rename(percent = "sum(pct_total)") 
+
+# %>% 
+#   pivot_wider(names_from = neg_pos, values_from = percent)
+```
+  
+### Figure 7: Negative News Sentiment Dominates in Lynching Coverage
+```{r}
+ ggplot(sentiments_afinn_decade3, aes(x = decade, y=percent, fill=neg_pos)) +
+  geom_bar(stat="identity", position = "dodge") +
+    scale_x_discrete(limits = c('pre1870', '1870s', '1880s', '1890s', '1900s', '1910s', '1920s', 'post1930s')) +
+   scale_y_continuous(labels = scales::percent) +
+  labs(title = "Negative News Sentiment Dominates in Lynching Coverage",
+       subtitle = "Based in 846 extracted articles, 1837-1960",
+       caption = "Afinn sentiment Lexicon. Graphic by Rob Wells, 1-4-2022",
+       y="Sentiment score",
+       x="Decade")
+
+# ggsave("Figure7_sentiment_decade_afinn_jan4.png",device = "png",width=9,height=6, dpi=1000)
+```
+
+# Regional Sentiment Analysis
+```{r}
+sentiments_afinn_decade
+
+
+```
+
+
+
+
+
+### Notes Below
+
+```{r}
+# Anger
+
+bing_anger <- bing_sentiments %>%
+  filter(sentiment == "anger")
+
+lynching_anger <- text_tokenized %>%
+  inner_join(bing_anger) %>%
+  count(word, sort = TRUE)
+
+lynching_anger
+
+```
+
+```{r}
+# Anticipation
+# results / themes not as clear as anger
+
+bing_anticipation <- bing_sentiments %>%
+  filter(sentiment == "anticipation")
+
+lynching_anticipation <- lynching_tokenized %>%
+  inner_join(bing_anticipation) %>%
+  count(word, sort = TRUE)
+
+lynching_anticipation
+
+```
+
+
+
+```{r}
+# Fear
+# see a reflection of the basic word count in these results
+
+bing_fear <- bing_sentiments %>%
+  filter(sentiment == "fear")
+
+lynching_fear <- lynching_tokenized %>%
+  inner_join(bing_fear) %>%
+  count(word, sort = TRUE)
+
+lynching_fear
+
+```
+
+
+```{r}
+# Disgust
+# see a reflection of the basic word count in these results
+
+bing_disgust <- bing_sentiments %>%
+  filter(sentiment == "disgust")
+
+lynching_disgust <- lynching_tokenized %>%
+  inner_join(bing_disgust) %>%
+  count(word, sort = TRUE)
+
+lynching_disgust
+
+```
+
+bing Sentiment Dictionary Analysis
+
+Need to recognize these are modern dictionaries, so looking here at words in corpus that are excluded from analysis.
+
+Interesting findings - white, lynching, brown, colored. We'd likely have to modify a dictionary if sentiment analysis is a desired approach.
+
+(Also available AFINN and bing, both measures of positive and negative. Interesting approach in "Text Mining with R" where sentiment measured by chapters of books; possible application to time segments? )
+
+```{r}
+excluded <- lynching_tokenized %>%
+  anti_join(bing_sentiments) %>%
+  count(word, sort = TRUE)
+
+excluded
+
+```
+
+# TF-IDF
+
+```{r}
+
+lynching_words <- lynching_tokenized %>%
+  count(word, sort = TRUE)
+
+lynching_words$document <- c("lynching")
+
+lynching_words
+  
+```
+
+Load in not-lynching articles.
+
+Load and clean text. 
+
+```{r}
+# Uses "notlynch_merge" script to build lynching_corpus.txt.
+
+not_lynching <- read_file("not_lynching/not_lynching.txt")
+
+# close hyphenated line breaks (handling -^ but not ^-^ per review of hyphenation patterns)
+not_lynching <- str_replace_all(not_lynching, "- ", "")
+
+# not_lynching
+
+```
+
+Convert to df for tokenization
+
+```{r}
+not_lynching_df <- tibble(not_lynching,)
+not_lynching_df
+```
+
+```{r}
+# unnest includes lower, punct removal
+
+not_lynching_tokenized <- not_lynching_df %>%
+  unnest_tokens(word,not_lynching)
+
+not_lynching_tokenized
+
+```
+
+Remove stopwords
+
+```{r}
+
+not_lynching_tokenized <- not_lynching_tokenized %>%
+  anti_join(stop_words, by = c("word" = "word")) %>%
+  filter(word != "temp_file") %>%
+  filter(word != "not_lynching") %>%
+  filter(!grepl('[0-9]', word))
+
+# fix the script so it doesn't pick up these file names, numbers  
+# forcibly removing for now
+
+not_lynching_tokenized
+
+```
+
+```{r}
+
+not_lynching_words <- not_lynching_tokenized %>%
+  count(word, sort=TRUE)
+
+not_lynching_words$document <- c("not_lynching")
+
+not_lynching_words
+
+```
+
+```{r}
+coded_for_tfidf <- rbind(lynching_words, not_lynching_words)
+coded_for_tfidf
+```
+
+
+```{r}
+
+lynching_tf_idf <- coded_for_tfidf %>%
+  bind_tf_idf(word, document, n) %>%
+  arrange(desc(tf_idf))
+
+lynching_tf_idf
+
+```
+
+```{r}
+library(forcats)
+
+lynching_tf_idf %>%
+  group_by(document) %>%
+  slice_max(tf_idf, n = 20) %>%
+  ungroup() %>%
+  ggplot(aes(tf_idf, fct_reorder(word, tf_idf), fill = document)) +
+  geom_col(show.legend = FALSE) + 
+  facet_wrap(~document, ncol = 2, scales = "free") + 
+  labs (x = "tf-idf", y = NULL)
+
+```
+
+Ideally, this would have given us a set of words that could distinguish lynching from not-lynching articles after the first cut by keyword. (Values so small, not sure this is useful, but worth diffing the output perhaps?)
+
+
+
